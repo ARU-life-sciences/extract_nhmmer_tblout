@@ -5,6 +5,7 @@ use std::{
     process::Stdio,
 };
 
+use anyhow::{Context, Result};
 use clap::{arg, command, value_parser, Arg};
 use hmm_tblout::Reader;
 use std::process::Command as Cmd;
@@ -14,7 +15,7 @@ fn get_extension_from_filename(filename: &str) -> Option<&str> {
     Path::new(filename).extension().and_then(OsStr::to_str)
 }
 
-fn main() -> Result<(), Box<dyn std::error::Error>> {
+fn main() -> Result<()> {
     eprintln!("Running extract_nhmmer_tblout");
     // set up the app
     let matches = command!()
@@ -69,18 +70,25 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
         .expect("defaulted by clap");
 
     // copy the fasta to a temporary directory
-    let tmpdir = tempdir()?;
+    let tmpdir = tempdir().context("Could not create tempdir")?;
 
     // check if the fasta is gzipped
     // if it is, use gunzip -c to copy to tmpdir
     // else just copy over
-    let fasta_is_gzipped = get_extension_from_filename(fasta.to_str().unwrap()).unwrap() == "gz";
+    let fasta_is_gzipped =
+        get_extension_from_filename(fasta.to_str().context("Could not convert path to string")?)
+            == Some("gz");
     let new_fasta_path = if fasta_is_gzipped {
         eprintln!("Input fasta is gzipped, unzipping...");
 
-        let fasta_file_name = fasta.clone().file_stem().unwrap().to_os_string();
+        let fasta_file_name = fasta
+            .clone()
+            .file_stem()
+            .context("Could not get file stem")?
+            .to_os_string();
 
-        let fasta_file = File::create(tmpdir.path().join(&fasta_file_name))?;
+        let fasta_file = File::create(tmpdir.path().join(&fasta_file_name))
+            .context("Could not create fasta file")?;
         let stdio = Stdio::from(fasta_file);
         let copy_via_gzip = Cmd::new("gunzip")
             .arg("-c")
