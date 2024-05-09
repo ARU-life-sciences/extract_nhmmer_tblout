@@ -1,13 +1,16 @@
 use std::{
     ffi::OsStr,
     fs::File,
+    io,
     path::{Path, PathBuf},
     process::Stdio,
 };
 
 use anyhow::{Context, Result};
 use clap::{arg, command, value_parser, Arg};
+use fasta::record::Definition;
 use hmm_tblout::Reader;
+use noodles_fasta as fasta;
 use std::process::Command as Cmd;
 use tempfile::tempdir;
 
@@ -26,8 +29,7 @@ fn main() -> Result<()> {
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
-            arg!(<FASTA> "Path to the fasta file used for nhmmer output.")
-                .required(true)
+            arg!([FASTA] "Path to the fasta file used for nhmmer output. If not specified, the target file from the tblout file is used (this probably only works when that file path is absolute).")
                 .value_parser(value_parser!(PathBuf)),
         )
         .arg(
@@ -47,6 +49,15 @@ fn main() -> Result<()> {
                 .default_value("0.00001")
                 .help("E-value threshold for hits to extract."),
         )
+        .arg(
+            Arg::new("species_id")
+                .short('s')
+                .long("species-id")
+                .value_parser(value_parser!(String))
+                .required(false)
+                .default_value("")
+                .help("Species ID to add to the start of the header. Useful for downstream processing."),
+        )
         .get_matches();
 
     // get the matches
@@ -55,10 +66,7 @@ fn main() -> Result<()> {
         .expect("tbl is required")
         .clone();
 
-    let fasta = matches
-        .get_one::<PathBuf>("FASTA")
-        .expect("fasta is required")
-        .clone();
+    let fasta_match = matches.get_one::<PathBuf>("FASTA").cloned();
 
     let esl_sfetch = matches
         .get_one::<PathBuf>("esl-sfetch")
@@ -69,8 +77,23 @@ fn main() -> Result<()> {
         .get_one::<f32>("e_value_threshold")
         .expect("defaulted by clap");
 
+    let mut species_id = matches
+        .get_one::<String>("species_id")
+        .expect("defaulted by clap")
+        .clone();
+
     // copy the fasta to a temporary directory
     let tmpdir = tempdir().context("Could not create tempdir")?;
+
+    // read the tblout to ge the metadata
+    let mut reader = Reader::from_path(tbl)?;
+    let meta = reader.meta();
+    let target_file = meta.target_file();
+
+    let fasta = match fasta_match {
+        Some(f) => f,
+        None => target_file,
+    };
 
     // check if the fasta is gzipped
     // if it is, use gunzip -c to copy to tmpdir
@@ -120,21 +143,17 @@ fn main() -> Result<()> {
         .spawn()?;
     index_fasta.wait_with_output()?;
 
-    // that takes a moment.
-    // now we can open the tbl, iterate over, and extract the sequences
-    let mut reader = Reader::from_path(tbl)?;
-
     eprintln!("Iterating over tblout");
     for record in reader.records() {
         let r = record?;
 
         // not interested in low value hits
-        if r.e_value() > e_value_threshold {
+        if r.e_value().unwrap() > e_value_threshold {
             continue;
         }
 
         let target_name = r.target_name();
-        let ali_from_to = format!("{}..{}", r.ali_from(), r.ali_to());
+        let ali_from_to = format!("{}..{}", r.ali_from().unwrap(), r.ali_to().unwrap());
 
         let extract_sequences = Cmd::new(esl_sfetch.clone())
             .arg("-c")
@@ -143,10 +162,22 @@ fn main() -> Result<()> {
             .arg(target_name)
             .output()?;
 
-        // TODO: maybe modify the fasta header to include extra information
-        let out = String::from_utf8(extract_sequences.stdout)?;
+        // parse the fasta properly and edit the header.
+        let mut parsed_fasta = fasta::reader::Reader::new(&extract_sequences.stdout[..]);
+        let stdout = io::stdout().lock();
+        let mut writer = fasta::Writer::new(stdout);
 
-        print!("{}", out);
+        for record in parsed_fasta.records() {
+            let r = record?;
+
+            let append_name = std::str::from_utf8(r.name())?;
+            species_id += append_name;
+
+            let def = Definition::new(species_id.as_bytes(), r.description().map(|e| e.to_vec()));
+
+            let new_record = fasta::Record::new(def, r.sequence().to_owned());
+            writer.write_record(&new_record)?;
+        }
     }
 
     Ok(())
