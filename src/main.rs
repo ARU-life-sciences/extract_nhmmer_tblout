@@ -77,7 +77,7 @@ fn main() -> Result<()> {
         .get_one::<f32>("e_value_threshold")
         .expect("defaulted by clap");
 
-    let mut species_id = matches
+    let species_id = matches
         .get_one::<String>("species_id")
         .expect("defaulted by clap")
         .clone();
@@ -137,18 +137,18 @@ fn main() -> Result<()> {
     let new_fasta_location = tmpdir.path().join(new_fasta_path.clone());
     eprintln!("New fasta location: {:?}", new_fasta_location);
     eprintln!("Indexing fasta");
-    let index_fasta = Cmd::new(esl_sfetch.clone())
+    let _index_fasta = Cmd::new(esl_sfetch.clone())
         .arg("--index")
         .arg(new_fasta_location.clone())
-        .spawn()?;
-    index_fasta.wait_with_output()?;
+        .output()?;
 
     eprintln!("Iterating over tblout");
     for record in reader.records() {
         let r = record?;
+        let eval = r.e_value().unwrap();
 
         // not interested in low value hits
-        if r.e_value().unwrap() > e_value_threshold {
+        if eval > e_value_threshold {
             continue;
         }
 
@@ -171,9 +171,13 @@ fn main() -> Result<()> {
             let r = record?;
 
             let append_name = std::str::from_utf8(r.name())?;
-            species_id += append_name;
+            let new_name = if species_id.is_empty() {
+                format!("{}:E{:e}", append_name, eval)
+            } else {
+                format!("{}:E{:e}:{}", species_id, eval, append_name)
+            };
 
-            let def = Definition::new(species_id.as_bytes(), r.description().map(|e| e.to_vec()));
+            let def = Definition::new(new_name.as_bytes(), r.description().map(|e| e.to_vec()));
 
             let new_record = fasta::Record::new(def, r.sequence().to_owned());
             writer.write_record(&new_record)?;
