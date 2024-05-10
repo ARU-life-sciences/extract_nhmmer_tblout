@@ -8,6 +8,6 @@ edition = "2021"
 [dependencies]
 anyhow = "1.0.82"
 clap = { version = "4.5.4", features = ["cargo"] }
-hmm_tblout = "0.2.0"
+hmm_tblout = "0.2.1"
 noodles-fasta = "0.37.0"
 tempfile = "3.10.1"

@@ -193,9 +193,9 @@ dependencies = [
 
 [[package]]
 name = "hmm_tblout"
-version = "0.2.0"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c527116f3392fe47729eb7b6b2e550b6a8df904c67dacfa31ed8d0b09752f3ee"
+checksum = "4eeb1a54d8c22afcc71aa5bb48d5d08ba76c52fc472d7655d6dc204fd3c8acd4"
 
 [[package]]
 name = "is_terminal_polyfill"
