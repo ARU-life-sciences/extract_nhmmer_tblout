@@ -184,5 +184,8 @@ fn main() -> Result<()> {
         }
     }
 
+    // and close the tmpdir
+    tmpdir.close()?;
+
     Ok(())
 }
