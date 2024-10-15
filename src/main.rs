@@ -7,7 +7,7 @@ use std::{
 };
 
 use anyhow::{Context, Result};
-use clap::{arg, command, value_parser, Arg};
+use clap::{arg, command, crate_version, value_parser, Arg};
 use fasta::record::Definition;
 use hmm_tblout::Reader;
 use noodles_fasta as fasta;
@@ -19,9 +19,11 @@ fn get_extension_from_filename(filename: &str) -> Option<&str> {
 }
 
 fn main() -> Result<()> {
-    eprintln!("Running extract_nhmmer_tblout");
     // set up the app
     let matches = command!()
+        .version(crate_version!())
+        .author("Max Carter-Brown <max.carter-brown@aru.ac.uk>")
+        .about("Extracts sequences from a fasta file using nhmmer tblout file.")
         .arg_required_else_help(true)
         .arg(
             arg!(<TBL> "Path to the nhmmer tblout file.")
