@@ -1,0 +1,32 @@
+# target name        accession  query name           accession  hmmfrom hmm to  alifrom   ali to  envfrom   env to   sq len strand   E-value  score  bias  description of target
+#------------------- ---------- -------------------- ---------- ------- -------  -------  -------  -------  -------  ------- ------ --------- ------ ----- ---------------------
+NC_003071.7          -          TR                   -                1     316 12618999 12619335 12618999 12619336 19698289    +     1.2e-39  141.3   5.0  Arabidopsis thaliana chromosome 2, partial sequence
+NC_003076.8          -          TR                   -               97     198 25281352 25281481 25281344 25281501 26975502    +        0.25   15.6   1.8  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003070.9          -          TR                   -               28     131 29070113 29070004 29070131 29069984 30427671    -        0.73   14.0   3.7  Arabidopsis thaliana chromosome 1 sequence
+NC_003070.9          -          TR                   -                1     117  9883984  9884087  9883984  9884107 30427671    +        0.82   13.9   2.8  Arabidopsis thaliana chromosome 1 sequence
+NC_003070.9          -          TR                   -                1      48  5298244  5298197  5298244  5298173 30427671    -         1.1   13.5   6.6  Arabidopsis thaliana chromosome 1 sequence
+NC_003076.8          -          TR                   -                2      64 21814313 21814251 21814314 21814234 26975502    -         1.6   12.9   3.9  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003075.7          -          TR                   -                2      55   216608   216659   216607   216691 18585056    +         2.9   12.1   4.8  Arabidopsis thaliana chromosome 4, partial sequence
+NC_003076.8          -          TR                   -                1      51 21945672 21945622 21945672 21945605 26975502    -         3.4   11.8   1.4  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003076.8          -          TR                   -                1     102  6398304  6398398  6398304  6398418 26975502    +         3.9   11.6   3.4  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003075.7          -          TR                   -               37     135 12464999 12465127 12464976 12465147 18585056    +           4   11.6   2.0  Arabidopsis thaliana chromosome 4, partial sequence
+NC_003076.8          -          TR                   -              109     158 25756300 25756368 25756280 25756377 26975502    +         4.3   11.5   3.5  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003070.9          -          TR                   -                1     121 26722432 26722315 26722432 26722287 30427671    -         4.5   11.5   2.6  Arabidopsis thaliana chromosome 1 sequence
+NC_003074.8          -          TR                   -                1      93 20746568 20746483 20746568 20746463 23459830    -         4.7   11.4   2.3  Arabidopsis thaliana chromosome 3, partial sequence
+NC_003075.7          -          TR                   -                2      56    77378    77326    77379    77297 18585056    -         6.3   11.0   2.8  Arabidopsis thaliana chromosome 4, partial sequence
+NC_003076.8          -          TR                   -                1      61 21812049 21811989 21812049 21811969 26975502    -         6.6   10.9   2.2  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003071.7          -          TR                   -                1      77  7956191  7956117  7956191  7956090 19698289    -         6.9   10.8   2.0  Arabidopsis thaliana chromosome 2, partial sequence
+NC_003074.8          -          TR                   -                1      68  4561038  4561107  4561038  4561117 23459830    +         7.3   10.8   2.0  Arabidopsis thaliana chromosome 3, partial sequence
+NC_003076.8          -          TR                   -                1      92 21169675 21169591 21169675 21169570 26975502    -         7.4   10.7   1.3  Arabidopsis thaliana chromosome 5, partial sequence
+NC_003075.7          -          TR                   -                1     102  5808804  5808898  5808804  5808918 18585056    +         7.5   10.7   4.6  Arabidopsis thaliana chromosome 4, partial sequence
+NC_003076.8          -          TR                   -               52     180 14027146 14026939 14027167 14026927 26975502    -         9.5   10.4   9.3  Arabidopsis thaliana chromosome 5, partial sequence
+#
+# Program:         nhmmer
+# Version:         3.4 (Aug 2023)
+# Pipeline mode:   SEARCH
+# Query file:      ./tr.hmm
+# Target file:     GCF_000001735.4_TAIR10.1_genomic.fna.gz
+# Option settings: /software/team301/hmmer-3.4/src/nhmmer --tblout ./tr_ara.tbl --dna --cpu 20 ./tr.hmm GCF_000001735.4_TAIR10.1_genomic.fna.gz 
+# Current dir:     /software/team301/extract_nhmmer_tblout/examples
+# Date:            Thu Jul  3 10:42:19 2025
+# [ok]

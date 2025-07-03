@@ -3,14 +3,15 @@ use std::{
     fs::File,
     io,
     path::{Path, PathBuf},
-    process::Stdio,
 };
 
 use anyhow::{Context, Result};
 use clap::{arg, command, crate_version, value_parser, Arg};
 use fasta::record::Definition;
+use flate2::read::GzDecoder;
 use hmm_tblout::Reader;
 use noodles_fasta as fasta;
+use std::io::{BufRead, BufReader, Write};
 use std::process::Command as Cmd;
 use tempfile::tempdir;
 
@@ -103,48 +104,51 @@ fn main() -> Result<()> {
     let fasta_is_gzipped =
         get_extension_from_filename(fasta.to_str().context("Could not convert path to string")?)
             == Some("gz");
-    let new_fasta_path = if fasta_is_gzipped {
-        eprintln!("Input fasta is gzipped, unzipping...");
 
-        let fasta_file_name = fasta
-            .clone()
-            .file_stem()
-            .context("Could not get file stem")?
-            .to_os_string();
+    let new_fasta_path = tmpdir
+        .path()
+        .join(fasta.file_name().context("Could not get file stem")?);
 
-        let fasta_file = File::create(tmpdir.path().join(&fasta_file_name))
-            .context("Could not create fasta file")?;
-        let stdio = Stdio::from(fasta_file);
-        let copy_via_gzip = Cmd::new("gunzip")
-            .arg("-c")
-            .arg(fasta.clone())
-            .stdout(stdio)
-            .spawn()?;
-        copy_via_gzip.wait_with_output()?;
+    if fasta_is_gzipped {
+        eprintln!("[+] Input fasta is gzipped, unzipping and normalizing line endings...");
 
-        fasta_file_name
+        // --- NEW: manual gunzip and line ending normalization ---
+        let gz_file = File::open(&fasta).context("Could not open gzipped FASTA")?;
+        let mut gz = GzDecoder::new(gz_file);
+        let reader = BufReader::new(&mut gz);
+        let mut writer =
+            File::create(&new_fasta_path).context("Could not create uncompressed fasta file")?;
+
+        for line in reader.lines() {
+            let line = line?;
+            let clean_line = line.trim_end_matches('\r'); // Remove \r from \r\n
+            writeln!(writer, "{}", clean_line)?; // Write with \n
+        }
     } else {
-        eprintln!("Input fasta is not gzipped, copying...");
-        let copy_over = Cmd::new("cp")
-            .arg(fasta.clone())
-            .arg(tmpdir.path())
-            .spawn()?;
-        copy_over.wait_with_output()?;
+        eprintln!("Input fasta is not gzipped, copying and normalizing line endings...");
 
-        let fasta_file_name = fasta.clone();
-        fasta_file_name.into_os_string()
-    };
+        // --- NEW: line-by-line copy and normalize line endings ---
+        let reader = BufReader::new(File::open(&fasta).context("Could not open FASTA")?);
+        let mut writer =
+            File::create(&new_fasta_path).context("Could not create copied fasta file")?;
+
+        for line in reader.lines() {
+            let line = line?;
+            let clean_line = line.trim_end_matches('\r'); // Normalize line endings
+            writeln!(writer, "{}", clean_line)?;
+        }
+    }
 
     // index the fasta
     let new_fasta_location = tmpdir.path().join(new_fasta_path.clone());
-    eprintln!("New fasta location: {:?}", new_fasta_location);
-    eprintln!("Indexing fasta");
+    eprintln!("[+] New fasta location: {:?}", new_fasta_location);
+    eprintln!("[+] Indexing fasta");
     let _index_fasta = Cmd::new(esl_sfetch.clone())
         .arg("--index")
         .arg(new_fasta_location.clone())
         .output()?;
 
-    eprintln!("Iterating over tblout");
+    eprintln!("[+] Iterating over tblout");
     for record in reader.records() {
         let r = record?;
         let eval = r.e_value().unwrap();
