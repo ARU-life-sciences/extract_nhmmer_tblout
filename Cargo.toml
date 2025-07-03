@@ -2,6 +2,7 @@
 name = "extract_nhmmer_tblout"
 version = "0.1.1"
 edition = "2021"
+repository = "https://github.com/ARU-life-sciences/extract_nhmmer_tblout"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -12,3 +13,8 @@ flate2 = "1.1.2"
 hmm_tblout = "0.2.1"
 noodles-fasta = "0.37.0"
 tempfile = "3.10.1"
+
+# The profile that 'dist' will build with
+[profile.dist]
+inherits = "release"
+lto = "thin"
